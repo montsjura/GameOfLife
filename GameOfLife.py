@@ -1,9 +1,11 @@
 from tkinter import *
 import random
+import time
 
 # Initializations
 matrixSize = 50
 cellSize = 10
+margin = 20
 cells = [[0 for x in range(matrixSize)] for y in range(matrixSize)]
 currentState = [[False for x in range(matrixSize)] for y in range(matrixSize)]
 nextState = [[False for x in range(matrixSize)] for y in range(matrixSize)]
@@ -12,18 +14,20 @@ DEAD_COLOR = "white"
 
 
 def manualInit(event):
-    currentState[event.x//cellSize][event.y//cellSize] = not(currentState[event.x//cellSize][event.y//cellSize])
-    if currentState[event.x//cellSize][event.y//cellSize]:
+    x = event.x - margin//2
+    y = event.y - margin//2
+    currentState[x//cellSize][y//cellSize] = not(currentState[x//cellSize][y//cellSize])
+    if currentState[x//cellSize][y//cellSize]:
         color = ALIVE_COLOR
     else:
         color = DEAD_COLOR
-    canvas.itemconfig(cells[event.x//cellSize][event.y//cellSize], fill=color)
+    canvas.itemconfig(cells[x//cellSize][y//cellSize], fill=color)
 
 
 def init():
     for x in range(matrixSize):
         for y in range(matrixSize):
-            cells[x][y] = canvas.create_rectangle(x*cellSize, y*cellSize, (x+1)*cellSize, (y+1)*cellSize, outline="gray", fill="white")
+            cells[x][y] = canvas.create_rectangle(margin//2 + x*cellSize, margin//2 + y*cellSize, margin//2 + (x+1)*cellSize, margin//2 + (y+1)*cellSize, outline="gray", fill="white")
 
 
 def clear():
@@ -82,6 +86,7 @@ def getLivingNeighbours(x, y):
     if currentState[afterColumn][afterRow]:
         nbNeighbours += 1
 
+    #print("({},{}) has {} neightbours.".format(x, y, nbNeighbours))
     return nbNeighbours
 
 
@@ -89,10 +94,13 @@ def evolve():
     for x in range(matrixSize):
         for y in range(matrixSize):
             nbNeighbours = getLivingNeighbours(x, y)
-            if currentState[x][y] and (nbNeighbours == 2 or nbNeighbours == 3):
-                nextState[x][y] = True
-            if currentState[x][y] and (nbNeighbours > 3):
-                nextState[x][y] = False
+            if currentState[x][y]:
+                if nbNeighbours == 2 or nbNeighbours == 3:
+                    nextState[x][y] = True
+                elif currentState[x][y] and (nbNeighbours > 3):
+                    nextState[x][y] = False
+                else:
+                    nextState[x][y] = False
             if not(currentState[x][y]) and nbNeighbours == 3:
                 nextState[x][y] = True
 
@@ -102,12 +110,17 @@ def evolve():
 
     draw()
 
+def simulate():
+    while True:
+        evolve()
+        time.sleep(0.5)
+
 
 window = Tk()
 window.title("Jeu de la vie")
 
-canvas = Canvas(window, width=matrixSize * cellSize, height=matrixSize * cellSize, highlightthickness=0)
-canvas.grid(row=1, columnspan=3)
+canvas = Canvas(window, width=matrixSize * cellSize + margin, height=matrixSize * cellSize + margin, highlightthickness=0)
+canvas.grid(row=3, columnspan=3)
 canvas.bind('<Button-1>', manualInit)
 
 clearButton = Button(window, text="Clear", command=clear)
@@ -118,6 +131,9 @@ randomButton.grid(row=0, column=1)
 
 evolveButton = Button(window, text="Evolve", command=evolve)
 evolveButton.grid(row=0, column=2)
+
+simulateButton = Button(window, text="simulate", command=simulate)
+simulateButton.grid(row=1, column=0)
 
 init()
 
