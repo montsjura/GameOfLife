@@ -1,11 +1,13 @@
 from tkinter import *
+from tkinter.ttk import Label
 import random
-import time
 
 # Initializations
 matrixSize = 50
 cellSize = 10
 margin = 20
+tempo = 400
+generation = 1
 cells = [[0 for x in range(matrixSize)] for y in range(matrixSize)]
 currentState = [[False for x in range(matrixSize)] for y in range(matrixSize)]
 nextState = [[False for x in range(matrixSize)] for y in range(matrixSize)]
@@ -27,13 +29,20 @@ def manualInit(event):
 def init():
     for x in range(matrixSize):
         for y in range(matrixSize):
-            cells[x][y] = canvas.create_rectangle(margin//2 + x*cellSize, margin//2 + y*cellSize, margin//2 + (x+1)*cellSize, margin//2 + (y+1)*cellSize, outline="gray", fill="white")
+            cells[x][y] = canvas.create_rectangle(margin//2 + x*cellSize, margin//2 + y*cellSize,
+                                                  margin//2 + (x+1)*cellSize,
+                                                  margin//2 + (y+1)*cellSize,
+                                                  outline="gray", fill="white")
 
 
 def clear():
     for x in range(matrixSize):
         for y in range(matrixSize):
             currentState[x][y] = False
+            nextState[x][y] = False
+    global generation
+    generation = 1
+    text.set("Generation 1")
     draw()
 
 
@@ -68,7 +77,7 @@ def getLivingNeighbours(x, y):
     if afterColumn == matrixSize:
         afterColumn = 0
 
-    nbNeighbours  = 0
+    nbNeighbours = 0
     if currentState[beforeColumn][beforeRow]:
         nbNeighbours += 1
     if currentState[beforeColumn][y]:
@@ -111,9 +120,15 @@ def evolve():
     draw()
 
 def simulate():
-    while True:
-        evolve()
-        time.sleep(0.5)
+    evolve()
+    global windowID, generation
+    generation += 1
+    text.set("Generation {}".format(generation))
+    windowID = window.after(tempo, simulate)
+
+
+def stop():
+    window.after_cancel(windowID)
 
 
 window = Tk()
@@ -134,6 +149,14 @@ evolveButton.grid(row=0, column=2)
 
 simulateButton = Button(window, text="simulate", command=simulate)
 simulateButton.grid(row=1, column=0)
+
+stopButton = Button(window, text="stop", command=stop)
+stopButton.grid(row=1, column=1)
+
+text = StringVar()
+text.set("Generation 1")
+generationLabel = Label(window, textvariable=text)
+generationLabel.grid(row=4, column=0, pady=10)
 
 init()
 
