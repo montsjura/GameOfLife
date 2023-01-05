@@ -9,8 +9,8 @@ margin = 20
 tempo = 400
 generation = 1
 cells = [[0 for x in range(matrixSize)] for y in range(matrixSize)]
-currentState = [[False for x in range(matrixSize)] for y in range(matrixSize)]
-nextState = [[False for x in range(matrixSize)] for y in range(matrixSize)]
+currentState = [[0 for x in range(matrixSize)] for y in range(matrixSize)]
+nextState = [[0 for x in range(matrixSize)] for y in range(matrixSize)]
 ALIVE_COLOR = "red"
 DEAD_COLOR = "white"
 
@@ -18,12 +18,14 @@ DEAD_COLOR = "white"
 def manualInit(event):
     x = event.x - margin//2
     y = event.y - margin//2
-    currentState[x//cellSize][y//cellSize] = not(currentState[x//cellSize][y//cellSize])
-    if currentState[x//cellSize][y//cellSize]:
+    currentState[x//cellSize][y//cellSize] = int(not(bool(currentState[x//cellSize][y//cellSize])))
+    if currentState[x//cellSize][y//cellSize] == 1:
         color = ALIVE_COLOR
     else:
         color = DEAD_COLOR
     canvas.itemconfig(cells[x//cellSize][y//cellSize], fill=color)
+    global textAlive
+    textAlive.set(str(" Alive cells : {}".format(sum(map(sum, currentState)))))
 
 
 def init():
@@ -38,25 +40,27 @@ def init():
 def clear():
     for x in range(matrixSize):
         for y in range(matrixSize):
-            currentState[x][y] = False
-            nextState[x][y] = False
+            currentState[x][y] = 0
+            nextState[x][y] = 0
     global generation
     generation = 1
-    text.set("Generation 1")
+    textGeneration.set("Generation 1")
+    textAlive.set(str(" Alive cells : {}".format(sum(map(sum, currentState)))))
     draw()
 
 
 def randomGrid():
     for x in range(matrixSize):
         for y in range(matrixSize):
-            currentState[x][y] = random.choice([True, False])
+            currentState[x][y] = random.choice([0, 1])
+    textAlive.set(str(" Alive cells : {}".format(sum(map(sum, currentState)))))
     draw()
 
 
 def draw():
     for x in range(matrixSize):
         for y in range(matrixSize):
-            if currentState[x][y]:
+            if currentState[x][y] == 1:
                 color = ALIVE_COLOR
             else:
                 color = DEAD_COLOR
@@ -78,21 +82,21 @@ def getLivingNeighbours(x, y):
         afterColumn = 0
 
     nbNeighbours = 0
-    if currentState[beforeColumn][beforeRow]:
+    if currentState[beforeColumn][beforeRow] == 1:
         nbNeighbours += 1
-    if currentState[beforeColumn][y]:
+    if currentState[beforeColumn][y] == 1:
         nbNeighbours += 1
-    if currentState[beforeColumn][afterRow]:
+    if currentState[beforeColumn][afterRow] == 1:
         nbNeighbours += 1
-    if currentState[x][beforeRow]:
+    if currentState[x][beforeRow] == 1:
         nbNeighbours += 1
-    if currentState[x][afterRow]:
+    if currentState[x][afterRow] == 1:
         nbNeighbours += 1
-    if currentState[afterColumn][beforeRow]:
+    if currentState[afterColumn][beforeRow] == 1:
         nbNeighbours += 1
-    if currentState[afterColumn][y]:
+    if currentState[afterColumn][y] == 1:
         nbNeighbours += 1
-    if currentState[afterColumn][afterRow]:
+    if currentState[afterColumn][afterRow] == 1:
         nbNeighbours += 1
 
     #print("({},{}) has {} neightbours.".format(x, y, nbNeighbours))
@@ -103,27 +107,28 @@ def evolve():
     for x in range(matrixSize):
         for y in range(matrixSize):
             nbNeighbours = getLivingNeighbours(x, y)
-            if currentState[x][y]:
+            if currentState[x][y] == 1:
                 if nbNeighbours == 2 or nbNeighbours == 3:
-                    nextState[x][y] = True
-                elif currentState[x][y] and (nbNeighbours > 3):
-                    nextState[x][y] = False
+                    nextState[x][y] = 1
+                elif currentState[x][y] == 1 and (nbNeighbours > 3):
+                    nextState[x][y] = 0
                 else:
-                    nextState[x][y] = False
-            if not(currentState[x][y]) and nbNeighbours == 3:
-                nextState[x][y] = True
+                    nextState[x][y] = 0
+            if currentState[x][y] == 0 and nbNeighbours == 3:
+                nextState[x][y] = 1
 
     for x in range(matrixSize):
         for y in range(matrixSize):
             currentState[x][y] = nextState[x][y]
 
+    textAlive.set(str(" Alive cells : {}".format(sum(map(sum, currentState)))))
     draw()
 
 def simulate():
     evolve()
     global windowID, generation
     generation += 1
-    text.set("Generation {}".format(generation))
+    textGeneration.set("Generation {}".format(generation))
     windowID = window.after(tempo, simulate)
 
 
@@ -153,10 +158,15 @@ simulateButton.grid(row=1, column=0)
 stopButton = Button(window, text="stop", command=stop)
 stopButton.grid(row=1, column=1)
 
-text = StringVar()
-text.set("Generation 1")
-generationLabel = Label(window, textvariable=text)
+textGeneration = StringVar()
+textGeneration.set("Generation 1")
+generationLabel = Label(window, textvariable=textGeneration)
 generationLabel.grid(row=4, column=0, pady=10)
+
+textAlive = StringVar()
+textAlive.set(str(" Alive cells : 0"))
+aliveLabel = Label(window, textvariable=textAlive)
+aliveLabel.grid(row=4, column=1, pady=10)
 
 init()
 
